@@ -18,6 +18,8 @@ domain = get_command_line_argument
 # https://www.rubydoc.info/stdlib/core/IO:readlines
 dns_raw = File.readlines("zone")
 
+# Function to parse the raw dns data read from the zone
+# file and converting it to the dns_record hash
 def parse_dns(raw)
   dns_records = {}
 
@@ -29,7 +31,7 @@ def parse_dns(raw)
   end
 
   raw.each do |line|
-    type, domain, point = record = line.split(",")
+    type, domain, point = line.split(",")
 
     # Creating the hash table
     dns_records[domain.strip] = {
@@ -41,6 +43,9 @@ def parse_dns(raw)
   return dns_records
 end
 
+# Function to find the IP Address for the given
+# domain in the dns_records hash. Returns a lookup
+# array of aliases(if any) and the address itself
 def resolve(dns_records, lookup_chain, domain)
   dns_records.each do |domain_stored, domain_detail|
     next if domain_stored != domain
