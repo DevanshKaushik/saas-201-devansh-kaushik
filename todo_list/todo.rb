@@ -20,10 +20,9 @@ class Todo
   end
 
   def to_displayable_string
-    completed_mark = if @completed then "[X]" else "[ ]" end
-    due_date = if !due_today? then @due_date else "" end
-
-    [completed_mark, @text, due_date].join(" ")
+    display_mark = @completed ? "[X]" : "[ ]"
+    display_date = due_today? ? nil : @due_date
+    "#{display_mark} #{@text} #{display_date}"
   end
 end
 
