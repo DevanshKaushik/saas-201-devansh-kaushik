@@ -23,50 +23,38 @@ dns_raw = File.readlines("zone")
 def parse_dns(raw)
   dns_records = {}
 
-  # Removing comments and empty lines
-  raw.each.with_index do |line, i|
-    if line.start_with?("#") or line == "\n"
-      raw.delete_at(i)
-    end
-  end
+  raw.
+    reject { |line| line.empty? or line.start_with?("#") }.
+    map { |line| line.strip.split(", ") }.
+    reject { |record| record.length < 3 }.
+    each { |data| dns_records[data[1]] = { :type => data[0], :target => data[2] } }
 
-  raw.each do |line|
-    type, domain, point = line.split(",")
-
-    # Creating the hash table
-    dns_records[domain.strip] = {
-      :type => type.strip,
-      :point => point.strip,
-    }
-  end
-
-  return dns_records
+  dns_records
 end
 
 # Function to find the IP Address for the given
 # domain in the dns_records hash. Returns a lookup
 # array of aliases(if any) and the address itself
 def resolve(dns_records, lookup_chain, domain)
-  dns_records.each do |domain_stored, domain_detail|
-    next if domain_stored != domain
+  domain_detail = dns_records[domain]
 
-    # Pushing the pointer to the lookup list
-    lookup_chain.push(domain_detail[:point])
-
-    # Checking for the record types
-    if domain_detail[:type] == "CNAME"
-      domain_new = domain_detail[:point]
-      lookup_chain = resolve(dns_records, lookup_chain, domain_new)
-      return lookup_chain
-    elsif domain_detail[:type] == "A"
-      return lookup_chain
-    else
-      return ["ERROR: record type for #{domain} is unknown"]
-    end
+  if domain_detail.nil?
+    return ["Error: record not found for #{domain}"]
   end
 
-  # If no records are found
-  ["Error: record not found for #{domain}"]
+  # Pushing the target to the lookup list
+  lookup_chain.push(domain_detail[:target])
+
+  # Checking for the record types
+  if domain_detail[:type] == "CNAME"
+    domain_new = domain_detail[:target]
+    lookup_chain = resolve(dns_records, lookup_chain, domain_new)
+    return lookup_chain
+  elsif domain_detail[:type] == "A"
+    return lookup_chain
+  else
+    return ["ERROR: record type for #{domain} is unknown"]
+  end
 end
 
 # To complete the assignment, implement `parse_dns` and `resolve`.
